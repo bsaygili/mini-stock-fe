@@ -6,9 +6,10 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 import { useState } from "react";
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import { BiLoaderCircle } from "react-icons/bi";
 import FileUpload from "../components/FileUpload";
+import { useGetProgressQuery, useUploadExcelMutation } from "../services/api";
 
 interface Product {
     StokKodu?: string;
@@ -26,29 +27,41 @@ export default function DashboardPage() {
     const [results, setResults] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [jobId, setJobId] = useState<string | null>(null);
+
+    const [uploadExcel, { isLoading }] = useUploadExcelMutation();
+    const { data: progressData } = useGetProgressQuery(jobId!, {
+        skip: !jobId,
+        pollingInterval: 1000,
+    });
+
 
     const handleUpload = async () => {
         if (!file) return setError("Lütfen bir dosya seçin");
-        setLoading(true);
-        setError("");
-        const formData = new FormData();
-        formData.append("file", file);
 
-        try {
-            const res = await fetch(`${import.meta.env.VITE_BASE_URL}/stock/upload`, { method: "POST", body: formData });
+        const res = await uploadExcel(file).unwrap();
+        setJobId(res.jobId);
 
-            const data = await res.json();
+        // setLoading(true);
+        // setError("");
+        // const formData = new FormData();
+        // formData.append("file", file);
 
-            toast[data?.statusCode === 500 ? "error" : "success"](data?.message)
-            if (data)
-                setResults(data);
-        } catch (e) {
-            setError("Dosya yüklenirken bir hata oluştu");
-        } finally {
-            setFile(null)
-            setLoading(false);
+        // try {
+        //     const res = await fetch(`${import.meta.env.VITE_BASE_URL}/stock/upload`, { method: "POST", body: formData });
 
-        }
+        //     const data = await res.json();
+
+        //     toast[data?.statusCode === 500 ? "error" : "success"](data?.message)
+        //     if (data)
+        //         setResults(data);
+        // } catch (e) {
+        //     setError("Dosya yüklenirken bir hata oluştu");
+        // } finally {
+        //     setFile(null)
+        //     setLoading(false);
+
+        // }
     };
 
     const columns: ColumnDef<Product>[] = [
@@ -83,7 +96,7 @@ export default function DashboardPage() {
     ];
 
     const table = useReactTable({
-        data: results?.criticalProducts || [],
+        data: progressData?.result?.criticalProducts || [],
         columns,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
@@ -133,10 +146,10 @@ export default function DashboardPage() {
 
                     <button
                         onClick={handleUpload}
-                        disabled={loading}
+                        disabled={isLoading}
                         className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 disabled:transform-none disabled:hover:scale-100"
                     >
-                        {loading ? (
+                        {isLoading ? (
                             <span className="flex items-center justify-center gap-2">
                                 <BiLoaderCircle className="animate-spin" />
                                 Yükleniyor...
@@ -153,21 +166,76 @@ export default function DashboardPage() {
                     )}
                 </div>
             </div>
-            {loading && (
-                <div>
-                    <BiLoaderCircle className="animate-spin me-2" />
-                    <span>Hesaplanıyor...</span>
+
+            {progressData && (
+                <div className="my-6 w-full max-w-md mx-auto">
+                    {/* <div
+                        className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative overflow-hidden transition-all duration-500"
+                        style={{ width: `${progressData?.progress}%` }}
+                    >
+                        <div className="shimmer" />
+                    </div> */}
+
+                    {/* STATUS */}
+                    <div className="flex justify-between items-center mb-2">
+                        <p className="text-sm text-gray-500">
+                            {progressData.status}
+                        </p>
+                        <p className="text-sm font-semibold text-gray-700">
+                            %{progressData.progress}
+                        </p>
+                    </div>
+
+                    {/* BAR CONTAINER */}
+                    <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+
+                        {/* PROGRESS */}
+                        <div
+                            className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out relative"
+                            style={{ width: `${progressData.progress}%` }}
+                        >
+                            {/* SHIMMER EFFECT */}
+                            <div className="absolute inset-0 bg-white/20 animate-pulse" />
+
+                        </div>
+                    </div>
+
                 </div>
             )}
-            {!loading && results && results?.criticalProducts?.length === 0 && (
+
+            {/* {progressData && (
+                <div style={{ marginTop: 20 }}>
+                    <p>Status: {progressData.status}</p>
+                    <div
+                        style={{
+                            width: '100%',
+                            height: 20,
+                            background: '#eee',
+                            borderRadius: 10,
+                            overflow: 'hidden',
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: `${progressData.progress}%`,
+                                height: '100%',
+                                background: 'green',
+                                transition: '0.3s',
+                            }}
+                        />
+                    </div>
+                    <p>%{progressData.progress}</p>
+                </div>
+            )} */}
+            {!isLoading && progressData?.result?.criticalProducts?.length === 0 && (
                 <div>
-                    <p className="text-lg mt-5">{results?.message}. Kritik stok seviyesine düşen ürün yoktur.</p>
+                    <p className="text-lg mt-5">{progressData?.result?.message}. Kritik stok seviyesine düşen ürün yoktur.</p>
                 </div>)}
-            {results && results?.criticalProducts?.length > 0 && (
+            {progressData?.result && progressData?.result?.criticalProducts?.length > 0 && (
                 <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl">
                     <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
                         <span className="text-3xl">⚠️</span>
-                        Kritik Ürünler ({results?.criticalProducts?.length ?? 0})
+                        Kritik Ürünler ({progressData?.result?.criticalProducts?.length ?? 0})
                     </h2>
                     <div className="overflow-x-auto">
                         <table className="min-w-full bg-white/5 border border-white/10 rounded-lg shadow-md">
