@@ -24,8 +24,8 @@ interface Product {
 
 export default function DashboardPage() {
     const [file, setFile] = useState<File | null>(null);
-    const [results, setResults] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
+    // const [results, setResults] = useState<any>(null);
+    // const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [jobId, setJobId] = useState<string | null>(null);
 
