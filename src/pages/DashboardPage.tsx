@@ -5,7 +5,7 @@ import {
     getPaginationRowModel,
     useReactTable,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import { BiLoaderCircle } from "react-icons/bi";
 import FileUpload from "../components/FileUpload";
@@ -24,16 +24,28 @@ interface Product {
 
 export default function DashboardPage() {
     const [file, setFile] = useState<File | null>(null);
-    // const [results, setResults] = useState<any>(null);
-    // const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [jobId, setJobId] = useState<string | null>(null);
 
+
+
     const [uploadExcel, { isLoading }] = useUploadExcelMutation();
+    const [stopPolling, setStopPolling] = useState<boolean>(false);
+
     const { data: progressData } = useGetProgressQuery(jobId!, {
-        skip: !jobId,
-        pollingInterval: 1000,
+        skip: !jobId || stopPolling,
+        pollingInterval: stopPolling ? 0 : 1000,
     });
+
+    useEffect(() => {
+        if (
+            progressData?.status === "done" ||
+            progressData?.status === "failed"
+        ) {
+            setStopPolling(true);
+        }
+    }, [progressData]);
+
 
 
     const handleUpload = async () => {
@@ -41,27 +53,6 @@ export default function DashboardPage() {
 
         const res = await uploadExcel(file).unwrap();
         setJobId(res.jobId);
-
-        // setLoading(true);
-        // setError("");
-        // const formData = new FormData();
-        // formData.append("file", file);
-
-        // try {
-        //     const res = await fetch(`${import.meta.env.VITE_BASE_URL}/stock/upload`, { method: "POST", body: formData });
-
-        //     const data = await res.json();
-
-        //     toast[data?.statusCode === 500 ? "error" : "success"](data?.message)
-        //     if (data)
-        //         setResults(data);
-        // } catch (e) {
-        //     setError("Dosya yüklenirken bir hata oluştu");
-        // } finally {
-        //     setFile(null)
-        //     setLoading(false);
-
-        // }
     };
 
     const columns: ColumnDef<Product>[] = [
@@ -169,12 +160,6 @@ export default function DashboardPage() {
 
             {progressData && (
                 <div className="my-6 w-full max-w-md mx-auto">
-                    {/* <div
-                        className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative overflow-hidden transition-all duration-500"
-                        style={{ width: `${progressData?.progress}%` }}
-                    >
-                        <div className="shimmer" />
-                    </div> */}
 
                     {/* STATUS */}
                     <div className="flex justify-between items-center mb-2">
@@ -203,30 +188,6 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            {/* {progressData && (
-                <div style={{ marginTop: 20 }}>
-                    <p>Status: {progressData.status}</p>
-                    <div
-                        style={{
-                            width: '100%',
-                            height: 20,
-                            background: '#eee',
-                            borderRadius: 10,
-                            overflow: 'hidden',
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: `${progressData.progress}%`,
-                                height: '100%',
-                                background: 'green',
-                                transition: '0.3s',
-                            }}
-                        />
-                    </div>
-                    <p>%{progressData.progress}</p>
-                </div>
-            )} */}
             {!isLoading && progressData?.result?.criticalProducts?.length === 0 && (
                 <div>
                     <p className="text-lg mt-5">{progressData?.result?.message}. Kritik stok seviyesine düşen ürün yoktur.</p>
@@ -298,6 +259,7 @@ export default function DashboardPage() {
                             </button>
                         </div>
                         <select
+                            title="satir-goster"
                             value={table.getState().pagination.pageSize}
                             onChange={(e) => table.setPageSize(Number(e.target.value))}
                             className="px-3 py-2 text-sm bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
