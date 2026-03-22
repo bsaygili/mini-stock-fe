@@ -18,11 +18,17 @@ export const api = createApi({
         };
       },
     }),
-
     getProgress: builder.query<any, string>({
       query: (jobId) => `/progress/${jobId}`,
+    }),
+    getUploadHistory: builder.query({
+      query: () => `/upload/get-history`,
     }),
   }),
 });
 
-export const { useUploadExcelMutation, useGetProgressQuery } = api;
+export const {
+  useUploadExcelMutation,
+  useGetProgressQuery,
+  useGetUploadHistoryQuery,
+} = api;

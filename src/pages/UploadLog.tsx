@@ -1,8 +1,8 @@
 
 import { flexRender, getCoreRowModel, getPaginationRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
-import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { BiLoaderCircle } from "react-icons/bi";
 import { HiDocument } from "react-icons/hi";
+import { useGetUploadHistoryQuery } from "../services/api";
 import { unixToDate } from "../utils";
 
 interface LogEntry {
@@ -20,32 +20,7 @@ interface LogEntry {
 
 const UploadLog = () => {
 
-    const [logs, setLogs] = useState<LogEntry[]>([]);
-
-    const getUploadsHistory = async () => {
-        try {
-            const res = await fetch(`${import.meta.env.VITE_BASE_URL}/upload`, {
-                method: "GET",
-            });
-
-            if (!res.ok) {
-                throw new Error(`Sunucu hatası: ${res.status} ${res.statusText}`);
-            }
-
-            const response = await res.json();
-            setLogs(response)
-
-        } catch (error: any) {
-            toast.error("Ayarlar yüklenirken bir hata oluştu.");
-        }
-    };
-
-    useEffect(() => {
-        getUploadsHistory()
-    }, [])
-
-
-
+    const { data: uploadHistoryData, isLoading } = useGetUploadHistoryQuery(null)
 
 
     const columns: ColumnDef<LogEntry>[] = [
@@ -81,7 +56,7 @@ const UploadLog = () => {
     ];
 
     const table = useReactTable({
-        data: logs || [],
+        data: uploadHistoryData || [],
         columns,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
@@ -105,6 +80,7 @@ const UploadLog = () => {
                 <p className="text-gray-300 text-base sm:text-lg">Dosya yükleme işlemlerinin detaylı kayıtları</p>
             </div>
 
+
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
                 <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl">
@@ -112,18 +88,21 @@ const UploadLog = () => {
                         <HiDocument className="text-cyan-400 text-2xl" />
                         <h3 className="text-white font-bold text-lg">Toplam Yükleme</h3>
                     </div>
-                    <p className="text-3xl font-bold text-cyan-400">{logs.length}</p>
+                    <p className="text-3xl font-bold text-cyan-400">{uploadHistoryData?.length}</p>
                 </div>
             </div>
 
+            {isLoading && (
+                <div className="flex flex-start my-2 w-full items-center justify-center text-purple-400">
+                    <BiLoaderCircle className="animate-spin h-10 w-2xl" size={24} />
+                </div>
+            )}
             {/* Logs Table */}
             <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl">
                 <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
                     <HiDocument className="text-cyan-400" />
                     Detaylı Kayıtlar
                 </h2>
-
-
                 <div className="overflow-x-auto">
                     <table className="min-w-full bg-white/5 border border-white/10 rounded-lg shadow-md">
                         <thead className="bg-white/10">
@@ -244,7 +223,7 @@ const UploadLog = () => {
                     </table>
                 </div> */}
 
-                {logs.length === 0 && (
+                {uploadHistoryData?.length === 0 && (
                     <div className="text-center py-12">
                         <HiDocument className="text-gray-400 text-6xl mx-auto mb-4" />
                         <p className="text-gray-400 text-lg">Henüz yükleme geçmişi bulunmuyor</p>
