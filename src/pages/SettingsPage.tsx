@@ -1,7 +1,9 @@
 
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import { BiLoaderCircle } from "react-icons/bi";
 import { HiAdjustments, HiCalendar, HiClock, HiCog, HiMail } from "react-icons/hi";
+import { useGetSettingsQuery, usePostSettingsMutation } from "../services/api";
 
 export default function SettingsPage() {
 
@@ -13,49 +15,41 @@ export default function SettingsPage() {
         stockDays: number,
     }>({
         emails: "",
-        criticalLimitPercent: 25,
+        criticalLimitPercent: 0,
         mailEnabled: true,
-        salesPeriodDays: 60,
-        stockDays: 7,
+        salesPeriodDays: 0,
+        stockDays: 0,
     })
 
-    const getSettings = async () => {
-        try {
-            const res = await fetch(`${import.meta.env.VITE_BASE_URL}/settings`, {
-                method: "GET",
-            });
+    const { data: settingsData, isLoading, isError, error } = useGetSettingsQuery(null)
+    const [postSettings] = usePostSettingsMutation()
 
-            if (!res.ok) {
-                throw new Error(`Sunucu hatası: ${res.status} ${res.statusText}`);
-            }
-
-            const response = await res.json();
-            setSettings({ ...response, emails: Array.isArray(response.emails) ? response.emails.join(", ") : "" })
-
-        } catch (error: any) {
-            toast.error("Ayarlar yüklenirken bir hata oluştu.");
-        }
-    };
 
     const handleSave = async () => {
-        const res = await fetch(`${import.meta.env.VITE_BASE_URL}/settings`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...settings, emails: settings.emails.split(","), }),
+        const res = await postSettings({
+            body: { ...settings, emails: settings.emails.split(","), }
         })
-        if (res.ok) {
+
+        if (res.data.success) {
             toast.success("Ayarlar kaydedildi!");
-            getSettings()
         } else {
-            toast.error(`Hata: ${res}`);
+            toast.error(`Hata: ${res?.error}`);
         }
 
     };
 
     useEffect(() => {
-        getSettings()
+        if (settingsData) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setSettings({ ...settingsData, emails: Array.isArray(settingsData.emails) ? settingsData.emails.join(", ") : "" })
+        }
+    }, [settingsData])
 
-    }, [])
+    useEffect(() => {
+        if (isError && error) {
+            toast.error("Ayarlar yüklenirken bir hata oluştu.");
+        }
+    }, [isError, error])
 
 
 
@@ -77,6 +71,11 @@ export default function SettingsPage() {
                     ⚙️ Sistem Ayarları
                 </h1>
             </div>
+            {isLoading && (
+                <div className="flex flex-start my-2 w-full items-center justify-center text-purple-400">
+                    <BiLoaderCircle className="animate-spin h-10 w-2xl" size={24} />
+                </div>
+            )}
 
             {/* Current Settings Overview */}
             <div className="mb-8 sm:mb-12 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl">
