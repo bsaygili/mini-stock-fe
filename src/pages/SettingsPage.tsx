@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { BiLoaderCircle } from "react-icons/bi";
-import { HiAdjustments, HiCalendar, HiClock, HiCog, HiMail } from "react-icons/hi";
+import { HiAdjustments, HiCalendar, HiCog, HiMail } from "react-icons/hi";
+import CurrentSettingsOverview from "../components/CurrentSettingsOverview";
 import { useGetSettingsQuery, usePostSettingsMutation } from "../services/api";
 
 export default function SettingsPage() {
@@ -78,29 +79,8 @@ export default function SettingsPage() {
             )}
 
             {/* Current Settings Overview */}
-            <div className="mb-8 sm:mb-12 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl">
-                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                    <HiAdjustments className="text-cyan-400" />
-                    Geçerli Ayarlar
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[
-                        { label: "Mail Listesi", value: settings.emails ? settings.emails.split(",").map((e) => e.trim()).filter(Boolean).join(", ") : "(boş)", icon: HiMail },
-                        { label: "Mail Gönderimi", value: settings.mailEnabled ? "Aktif" : "Pasif", icon: HiCog },
-                        { label: "Kritik Stok Limit", value: `%${settings.criticalLimitPercent}`, icon: HiAdjustments },
-                        { label: "Satış Periyodu", value: `${settings.salesPeriodDays} gün`, icon: HiCalendar },
-                        { label: "Stok Hesap Periyodu", value: `${settings.stockDays} gün`, icon: HiClock },
-                    ].map((item, index) => (
-                        <div key={index} className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all duration-300 hover:scale-105">
-                            <div className="flex items-center gap-3 mb-2">
-                                <item.icon className="text-cyan-400 text-xl" />
-                                <span className="text-gray-300 font-medium">{item.label}</span>
-                            </div>
-                            <p className="text-white font-semibold text-lg">{item.value}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
+            <CurrentSettingsOverview settings={settings} />
+
 
             {/* Settings Form */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
@@ -156,7 +136,7 @@ export default function SettingsPage() {
                 <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl hover:shadow-cyan-500/20 transition-all duration-300 hover:scale-105">
                     <div className="flex items-center gap-3 mb-4">
                         <HiAdjustments className="text-cyan-400 text-2xl" />
-                        <h3 className="text-white font-bold text-lg">Kritik Stok</h3>
+                        <h3 className="text-white font-bold text-lg">Güvenlik Payı</h3>
                     </div>
                     <div className="space-y-3">
                         <div className="text-center">
@@ -207,7 +187,7 @@ export default function SettingsPage() {
                             </div>
                         </div>
                         <div>
-                            <label htmlFor="stockDays" className="block text-gray-300 text-sm mb-1">Stok Hesap</label>
+                            <label htmlFor="stockDays" className="block text-gray-300 text-sm mb-1">Sipariş Periyodu</label>
                             <div className="relative">
                                 <input
                                     id="stockDays"

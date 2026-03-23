@@ -6,10 +6,11 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { BiLoaderCircle } from "react-icons/bi";
+import CurrentSettingsOverview from "../components/CurrentSettingsOverview";
 import FileUpload from "../components/FileUpload";
-import { useGetProgressQuery, useUploadExcelMutation } from "../services/api";
+import { useGetProgressQuery, useGetSettingsQuery, useUploadExcelMutation } from "../services/api";
 
 interface Product {
     StokKodu?: string;
@@ -22,6 +23,14 @@ interface Product {
     minOrderQty: number;
 }
 
+const PROGRESS = {
+    done: "Tamamlandı",
+    parsing: "Ayrıştırılıyor",
+    not_found: "Bulunamadı",
+    error: "Hata Oluştu"
+
+}
+
 export default function DashboardPage() {
     const [file, setFile] = useState<File | null>(null);
     const [error, setError] = useState("");
@@ -30,9 +39,10 @@ export default function DashboardPage() {
 
 
     const [uploadExcel, { isLoading }] = useUploadExcelMutation();
+    const { data: settingsData } = useGetSettingsQuery(null)
     const [stopPolling, setStopPolling] = useState<boolean>(false);
 
-    const { data: progressData } = useGetProgressQuery(jobId!, {
+    const { data: progressData, isError, error: progressError } = useGetProgressQuery(jobId!, {
         skip: !jobId || stopPolling,
         pollingInterval: stopPolling ? 0 : 1000,
     });
@@ -40,13 +50,21 @@ export default function DashboardPage() {
     useEffect(() => {
         if (
             progressData?.status === "done" ||
-            progressData?.status === "error"
+            progressData?.status === "error" ||
+            progressData?.status === "not_found"
         ) {
             setStopPolling(true);
             setFile(null)
             setJobId(null)
         }
     }, [progressData]);
+
+    useEffect(() => {
+        if (isError) {
+            console.log('progressError', progressError)
+            toast.error("test")
+        }
+    }, [isError]);
 
 
 
@@ -69,7 +87,7 @@ export default function DashboardPage() {
             cell: ({ row }) => row.original.StokAdi || row.original.productName,
         },
         {
-            accessorKey: "stockQty",
+            accessorKey: "stock",
             header: "Mevcut Stok",
         },
         {
@@ -88,6 +106,7 @@ export default function DashboardPage() {
         },
     ];
 
+    // eslint-disable-next-line react-hooks/incompatible-library
     const table = useReactTable({
         data: progressData?.result?.criticalProducts || [],
         columns,
@@ -118,6 +137,8 @@ export default function DashboardPage() {
                 </h1>
                 <p className="text-gray-300 text-base sm:text-lg">Dosya yükleyip kritik stokları hesaplayın</p>
             </div>
+            {/* Current Settings Overview */}
+            <CurrentSettingsOverview settings={settingsData} />
 
             {/* Upload Section */}
             <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl mb-8">
@@ -152,7 +173,7 @@ export default function DashboardPage() {
                         )}
                     </button>
 
-                    {error && (
+                    {error && !file && (
                         <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
                             <p className="text-red-300 font-medium">❌ {error}</p>
                         </div>
@@ -166,7 +187,7 @@ export default function DashboardPage() {
                     {/* STATUS */}
                     <div className="flex justify-between items-center mb-2">
                         <p className="text-sm text-gray-500">
-                            {progressData.status}
+                            {PROGRESS[progressData.status]}
                         </p>
                         <p className="text-sm font-semibold text-gray-700">
                             %{progressData.progress}
