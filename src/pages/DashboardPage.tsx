@@ -23,12 +23,13 @@ interface Product {
     minOrderQty: number;
 }
 
-const PROGRESS = {
+const PROGRESS: { [key: string]: string } = {
     done: "Tamamlandı",
     parsing: "Ayrıştırılıyor",
+    calculating: "Hesaplanıyor",
+    sending_mail: "Mail Gönderiliyor",
     not_found: "Bulunamadı",
     error: "Hata Oluştu"
-
 }
 
 export default function DashboardPage() {
