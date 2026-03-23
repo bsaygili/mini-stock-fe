@@ -10,7 +10,8 @@ import toast, { Toaster } from "react-hot-toast";
 import { BiLoaderCircle } from "react-icons/bi";
 import CurrentSettingsOverview from "../components/CurrentSettingsOverview";
 import FileUpload from "../components/FileUpload";
-import { useGetProgressQuery, useGetSettingsQuery, useUploadExcelMutation } from "../services/api";
+import { useSmartPolling } from "../hooks/useSmartPolling";
+import { useGetSettingsQuery, useUploadExcelMutation } from "../services/api";
 
 interface Product {
     StokKodu?: string;
@@ -38,34 +39,15 @@ export default function DashboardPage() {
     const [jobId, setJobId] = useState<string | null>(null);
 
 
-
+    const { progressData } = useSmartPolling(jobId);
     const [uploadExcel, { isLoading }] = useUploadExcelMutation();
     const { data: settingsData } = useGetSettingsQuery(null)
-    const [stopPolling, setStopPolling] = useState<boolean>(false);
-
-    const { data: progressData, isError, error: progressError } = useGetProgressQuery(jobId!, {
-        skip: !jobId || stopPolling,
-        pollingInterval: stopPolling ? 0 : 1000,
-    });
 
     useEffect(() => {
-        if (
-            progressData?.status === "done" ||
-            progressData?.status === "error" ||
-            progressData?.status === "not_found"
-        ) {
-            setStopPolling(true);
-            setFile(null)
-            setJobId(null)
+        if ((progressData?.status === "error" || progressData?.status === "not_found") && progressData?.message?.message) {
+            toast.error(progressData?.message?.message)
         }
     }, [progressData]);
-
-    useEffect(() => {
-        if (isError) {
-            console.log('progressError', progressError)
-            toast.error("test")
-        }
-    }, [isError]);
 
 
 
