@@ -14,7 +14,13 @@ export default function FileUpload({ onFile }: { onFile: (file: File) => void })
         onDragEnter: () => setDragActive(true),
         onDragLeave: () => setDragActive(false),
         multiple: false,
-        accept: { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [] },
+        // accept: {
+        //     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [], // .xlsx
+        //     "application/vnd.ms-excel": [], // .xls
+        // },
+        accept: {
+            "application/*": [".xls", ".xlsx"],
+        },
     });
 
     return (
@@ -28,7 +34,7 @@ export default function FileUpload({ onFile }: { onFile: (file: File) => void })
                 📄 Excel dosyasını buraya sürükleyin
             </p>
             <p className={`text-center text-sm mt-2 transition-colors duration-300 ${dragActive ? "text-cyan-200" : "text-gray-400"}`}>
-                veya tıklayarak dosya seçin (.xlsx formatında)
+                veya tıklayarak dosya seçin (.xlsx veya .xls formatında)
             </p>
         </div>
     );

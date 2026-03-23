@@ -40,9 +40,11 @@ export default function DashboardPage() {
     useEffect(() => {
         if (
             progressData?.status === "done" ||
-            progressData?.status === "failed"
+            progressData?.status === "error"
         ) {
             setStopPolling(true);
+            setFile(null)
+            setJobId(null)
         }
     }, [progressData]);
 
